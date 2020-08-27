@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-+import {listRecentDeploys, rollbackCheckRevision} from './rollback'
+import {listRecentDeploys, rollbackCheckRevision} from './rollback'
 
 async function run(): Promise<void> {
   try {
