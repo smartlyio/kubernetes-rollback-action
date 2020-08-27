@@ -78,14 +78,6 @@ jobs:
           deploymentName: web
           rollbackSha: abc123
           command: checkRevision
-      - name: Set notification status
-        id: rollback_status
-        run: |
-          if [[ "${{ steps.check_revision.outputs.ALLOW_ROLLBACK }}" == "true" ]]; then
-              echo ::set-output name=STATUS::success
-          else
-              echo ::set-output name=STATUS::failed
-          fi
       - name: notify deploy started/failed
         uses: smartlyio/workflow-webhook@v1
         with:
@@ -95,7 +87,7 @@ jobs:
           data: |
             {
               "channels": ["${{ github.event.inputs.channel }}"],
-              "jobs": {"this": {"result": "${{ steps.rollback_status.outpus.STATUS }}" } },
+              "jobs": {},
               "user": "${{ github.event.inputs.user }}",
               "run_id": ${{ github.run_id }},
               "thread_id": "${{ github.event.inputs.threadId }}",
@@ -103,7 +95,15 @@ jobs:
                 "text": "${{ steps.check_revision.outputs.SLACK_NOTIFICATION_MESSAGE }}"
               }
             } 
+      - name: checkout revision
+        if: steps.check_revision.outputs.ALLOW_ROLLBACK == 'true'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ fixme.rollbackSha }}
+            
       - name: Deploy with krane
+        if: steps.check_revision.outputs.ALLOW_ROLLBACK == 'true'
+
 ```
 
 ## Development
