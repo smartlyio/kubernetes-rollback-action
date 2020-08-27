@@ -13,11 +13,16 @@ inputs:
     description: 'Name of the deployment within service to operate rollbacks on'
     required: true
   command:
-    description: 'Canary support command to run. One of [listRecentDeploys|rollback]'
+    description: 'Rollback support command to run. One of [listRecentDeploys|checkRevision]'
     required: true
+  rollbackSha:
+    description: 'Git revision to validate with the `checkRevision` command'
+    required: false
 outputs:
   SLACK_NOTIFICATION_MESSAGE:
     description: 'A message that should be sent to slack as a response to the command'
+  ALLOW_ROLLBACK:
+    description: 'Whether or not rollback should be allowed. true/false'
 runs:
   using: 'node12'
   main: 'dist/index.js'

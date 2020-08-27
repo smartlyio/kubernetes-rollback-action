@@ -45,3 +45,11 @@ jobs:
         kubernetesContext: test-context
         command: listRecentDeploys
         deploymentName: deployment
+    - name: Validate a redeploy revision
+      uses: ./
+      with:
+        serviceName: test-service
+        kubernetesContext: test-context
+        command: checkRevision
+        rollbackSha: abc123
+        deploymentName: deployment
