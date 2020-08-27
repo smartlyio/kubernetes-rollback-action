@@ -19,12 +19,14 @@ This will be used to provide functionality like:
 | serviceName | | yes | Name of the kubernetes service to operate on. |
 | deploymentName | | no | Name of the deployment within service to operate rollbacks on |
 | command | | yes | Canary support command to run. One of `[listRecentDeploys|rollback]`. |
+| rollbackSha | | no | Git revision to validate with the `checkRevision` command. |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
 | SLACK_NOTIFICATION_MESSAGE | Message that should be sent to slack as a response to the command |
+| ALLOW_ROLLBACK | Whether or not rollback should be allowed. `true/false` |
 
 ## Example usage
 

@@ -16,13 +16,13 @@ inputs:
     description: 'Rollback support command to run. One of [listRecentDeploys|checkRevision]'
     required: true
   rollbackSha:
-    description: 'Git revision to validate with the `checkRevision` command'
+    description: 'Git revision to validate with the `checkRevision` command.'
     required: false
 outputs:
   SLACK_NOTIFICATION_MESSAGE:
-    description: 'A message that should be sent to slack as a response to the command'
+    description: 'A message that should be sent to slack as a response to the command.'
   ALLOW_ROLLBACK:
-    description: 'Whether or not rollback should be allowed. true/false'
+    description: 'Whether or not rollback should be allowed. true/false.'
 runs:
   using: 'node12'
   main: 'dist/index.js'
