@@ -30,16 +30,11 @@ This will be used to provide functionality like:
 
 ```yaml
 name: Is Locked
-on:
-  pull_request:
-    branches:
-      - master
-  push:
-    branches:
-      - master
+
+<manual-trigger>
 
 jobs:
-  is_locked:
+  list_deploys:
     runs-on: ubuntu-latest
     id: is_locked
     steps:
@@ -52,13 +47,61 @@ jobs:
           kubernetesClusterDomain: my-kubernetes-server.example.com
           kubernetesContext: test-context
           kubernetesNamespace: test-service
-      - name: Check if deployment is locked
+      - name: List recent deploys for rollback
         uses: smartlyio/kubernetes-rollback-action@v1
         with: 
           kubernetesContext: test-context
           serviceName: test-service
           deploymentName: web
           command: listRecentDeploys
+
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Authenticate with the cluster
+        env:
+          KUBERNETES_AUTH_TOKEN: ${{ secrets.KUBERNETES_AUTH_TOKEN }}
+        uses: smartlyio/kubernetes-auth-action@v1
+        with:
+          kubernetesClusterDomain: my-kubernetes-server.example.com
+          kubernetesContext: test-context
+          kubernetesNamespace: test-service
+      - name: Check if deploy is allowed
+        uses: smartlyio/kubernetes-rollback-action@v1
+        id: check_revision
+        with: 
+          kubernetesContext: test-context
+          serviceName: test-service
+          deploymentName: web
+          rollbackSha: abc123
+          command: checkRevision
+      - name: Set notification status
+        id: rollback_status
+        run: |
+          if [[ "${{ steps.check_revision.outputs.ALLOW_ROLLBACK }}" == "true" ]]; then
+              echo ::set-output name=STATUS::success
+          else
+              echo ::set-output name=STATUS::failed
+          fi
+      - name: notify deploy started/failed
+        uses: smartlyio/workflow-webhook@v1
+        with:
+          webhook_url: "${{ secrets.SLACK_NOTIFY_URL }}"
+          webhook_auth: "${{ secrets.SLACK_NOTIFY_TOKEN }}"
+          webhook_secret: "${{ secrets.SLACK_NOTIFY_HMAC_SECRET }}"
+          data: |
+            {
+              "channels": ["${{ github.event.inputs.channel }}"],
+              "jobs": {"this": {"result": "${{ steps.rollback_status.outpus.STATUS }}" } },
+              "user": "${{ github.event.inputs.user }}",
+              "run_id": ${{ github.run_id }},
+              "thread_id": "${{ github.event.inputs.threadId }}",
+              "notification_override": {
+                "text": "${{ steps.check_revision.outputs.SLACK_NOTIFICATION_MESSAGE }}"
+              }
+            } 
+      - name: Deploy with krane
 ```
 
 ## Development
