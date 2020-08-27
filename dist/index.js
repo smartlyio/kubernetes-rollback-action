@@ -118,10 +118,17 @@ function run() {
                 required: true
             });
             const serviceName = core.getInput('serviceName', { required: true });
-            const deploymentName = core.getInput('deploymentName');
+            const deploymentName = core.getInput('deploymentName', { required: true });
             const command = core.getInput('command', { required: true });
             if (command === 'listRecentDeploys') {
                 yield rollback_1.listRecentDeploys(kubernetesContext, serviceName, deploymentName);
+            }
+            else if (command === 'checkRevision') {
+                const rollbackSha = core.getInput('rollbackSha');
+                if (!rollbackSha) {
+                    throw new Error('Required input `rollbackSha` was not provided.');
+                }
+                yield rollback_1.rollbackCheckRevision(kubernetesContext, serviceName, deploymentName, rollbackSha);
             }
             else {
                 throw new Error(`Command "${command}" is not implemented`);
@@ -170,7 +177,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.listRecentDeploys = exports.formatDeploysList = void 0;
+exports.rollbackCheckRevision = exports.listRecentDeploys = exports.formatDeploysList = void 0;
 const core = __importStar(__webpack_require__(186));
 const kubectl_1 = __webpack_require__(334);
 function formatDeploysList(serviceName, deploymentName, deployments) {
@@ -193,7 +200,7 @@ ${deployment.deployer}
     return message;
 }
 exports.formatDeploysList = formatDeploysList;
-function listRecentDeploys(kubernetesContext, serviceName, deploymentName) {
+function getRecentDeploys(kubernetesContext, serviceName, deploymentName) {
     return __awaiter(this, void 0, void 0, function* () {
         const deploymentsRaw = yield kubectl_1.runKubectl(kubernetesContext, [
             'rollout',
@@ -227,12 +234,41 @@ function listRecentDeploys(kubernetesContext, serviceName, deploymentName) {
         })
             .reverse();
         core.info(`Found ${deployments.length} previous deployments`);
+        return deployments;
+    });
+}
+function listRecentDeploys(kubernetesContext, serviceName, deploymentName) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const deployments = yield getRecentDeploys(kubernetesContext, serviceName, deploymentName);
         const deploymentListMessage = formatDeploysList(serviceName, deploymentName, deployments);
         core.info(deploymentListMessage);
         core.setOutput('SLACK_NOTIFICATION_MESSAGE', deploymentListMessage);
     });
 }
 exports.listRecentDeploys = listRecentDeploys;
+function rollbackCheckRevision(kubernetesContext, serviceName, deploymentName, rollbackSha) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const deployments = yield getRecentDeploys(kubernetesContext, serviceName, deploymentName);
+        const requestedDeployments = deployments.filter(item => {
+            return item.revision === rollbackSha;
+        });
+        let message;
+        let allowRollback = false;
+        if (requestedDeployments.length === 0) {
+            message = `\
+Could not find recent deploy of \`${serviceName}\` with revision \`${rollbackSha}\`
+Use \`hubot kube-gha-rollback ${serviceName} list\` to get the list of available rollback revisions.
+`;
+        }
+        else {
+            message = `Starting rollback of \`${serviceName}\` to revision \`${rollbackSha}\``;
+            allowRollback = true;
+        }
+        core.setOutput('SLACK_NOTIFICATION_MESSAGE', message);
+        core.setOutput('ALLOW_ROLLBACK', allowRollback.toString());
+    });
+}
+exports.rollbackCheckRevision = rollbackCheckRevision;
 
 
 /***/ }),

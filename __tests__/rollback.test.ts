@@ -135,7 +135,7 @@ REVISION  CHANGE-CAUSE
     expect(calls[1]).toEqual(['ALLOW_ROLLBACK', 'true'])
   })
 
-  test('can\'t find appropriate rollback revision', async () => {
+  test("can't find appropriate rollback revision", async () => {
     const rolloutHistory = `deployment.extensions/web
 REVISION  CHANGE-CAUSE
 118       type=kubernetes-deploy,deployer=user-1,revision=01234,at=2020-08-20 14:39:59 UTC
