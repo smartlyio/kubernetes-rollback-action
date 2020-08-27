@@ -1,24 +1,48 @@
 name: 'build-test'
 on: # rebuild any PRs and main branch changes
   pull_request:
+    branches:
+      - master
   push:
     branches:
-      - main
-      - 'releases/*'
+      - master
 
 jobs:
   build: # make sure build/ci work properly
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - run: |
-          npm install
-      - run: |
-          npm run all
+    - uses: actions/checkout@v2
+    - name: "Install"
+      run: |
+        npm install
+    - name: "Run build"
+      run: |
+        npm run all
+    - name: "Run tests"
+      run: |
+        npm run test
+    - name: "Verify artefacts are up to date in the repository"
+      run: |
+        # Error if there are changes after the build
+        if [ "$(git status --porcelain | wc -c)" -gt "0" ]; then
+            echo "Built artefacts (dist/*) were not updated by the pull request."
+            echo "Run `npm run-script package` and commit the changes."
+            exit 1
+        fi
   test: # make sure the action works on a clean machine without building
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: ./
-        with:
-          milliseconds: 1000
+    - uses: actions/checkout@v2
+    - name: Mock the kubectl binary
+      run: |
+        export PATH="$PATH"
+        export PATH="$(pwd)/__tests__/bin${PATH:+:${PATH}}"
+        echo ::set-env name=PATH::"${PATH}"
+    - name: List recent deployments
+      uses: ./
+      with: 
+        serviceName: test-service
+        kubernetesContext: test-context
+        command: listRecentDeploys
+        user: github-actions
+        deploymentName: deployment

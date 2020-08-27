@@ -1,11 +1,23 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'kubernetes-rollback-action'
+description: 'An action to handle kubectl interaction for kube rollbacks'
+author: 'Smartly.io'
 inputs:
-  milliseconds: # change this
+  # Expects to be pre-configured with smartlyio/kubernetes-auth-token@v1
+  kubernetesContext:
+    description: 'Kubernetes context name. Usually the name of the cluster, but can be random.'
     required: true
-    description: 'input description here'
-    default: 'default value if applicable'
+  serviceName:
+    description: 'Name of the service'
+    required: true
+  deploymentName:
+    description: 'Name of the deployment within service to operate rollbacks on'
+    required: false
+  command:
+    description: 'Canary support command to run. One of [listRecentDeploys|rollback]'
+    required: true
+outputs:
+  SLACK_NOTIFICATION_MESSAGE:
+    description: 'A message that should be sent to slack as a response to the command'
 runs:
   using: 'node12'
   main: 'dist/index.js'
