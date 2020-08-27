@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echoerr() { printf "%s\n" "$*" >&2; }
+
+echoerr "kubectl run with arguments:" "$@"
+
+# Remove "--context <name>"
+shift; shift
+
+if [[ "$1" == "get" ]]; then
+    if [[ "$2" == "deployments" ]]; then
+        echo -en "<none>\n<none>\n"
+    elif [[ "$2" == "pods" ]]; then
+        echo -en "prod.smartly.af/test-service:abc123\n"
+    fi
+elif [[ "$1" == "rollout" ]]; then
+    if [[ "$2" == "history" ]]; then
+        echo "deployment.extensions/web"
+        echo "REVISION  CHANGE-CAUSE"
+        echo "118       type=kubernetes-deploy,deployer=user-1,revision=01234,at=2020-08-20 14:39:59 UTC"
+        echo "119       type=kubernetes-deploy,deployer=user-1,revision=12345,at=2020-08-20 14:45:03 UTC"
+        echo "120       type=kubernetes-deploy,deployer=user-2,revision=23456,at=2020-08-20 15:41:27 UTC"
+        echo "121       type=kubernetes-deploy,deployer=user-1,revision=34567,at=2020-08-21 10:27:55 UTC"
+        echo
+    fi
+fi
