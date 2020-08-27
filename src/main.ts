@@ -7,7 +7,7 @@ async function run(): Promise<void> {
       required: true
     })
     const serviceName = core.getInput('serviceName', {required: true})
-    const deploymentName = core.getInput('deploymentName')
+    const deploymentName = core.getInput('deploymentName', {required: true})
     const command = core.getInput('command', {required: true})
     if (command === 'listRecentDeploys') {
       await listRecentDeploys(kubernetesContext, serviceName, deploymentName)

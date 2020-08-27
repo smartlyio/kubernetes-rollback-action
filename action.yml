@@ -11,7 +11,7 @@ inputs:
     required: true
   deploymentName:
     description: 'Name of the deployment within service to operate rollbacks on'
-    required: false
+    required: true
   command:
     description: 'Canary support command to run. One of [listRecentDeploys|rollback]'
     required: true
