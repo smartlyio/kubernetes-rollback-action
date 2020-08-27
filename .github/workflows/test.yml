@@ -44,5 +44,4 @@ jobs:
         serviceName: test-service
         kubernetesContext: test-context
         command: listRecentDeploys
-        user: github-actions
         deploymentName: deployment
