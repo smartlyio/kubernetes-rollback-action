@@ -188,9 +188,9 @@ function formatDeploysList(serviceName, deploymentName, deployments) {
             const githubUrl = `https://github.com/smartlyio/${serviceName}/compare/${deployment.revision}..${previousDeployment.revision}`;
             const deploymentDetail = `\
 ${deployment.at} \
-${deployment.revision} \
+\`${deployment.revision}\` \
 <${githubUrl}|GitHub>  \
-${deployment.deployer}
+by \`${deployment.deployer}\`
 `;
             message += deploymentDetail;
         }
