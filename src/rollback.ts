@@ -48,7 +48,7 @@ async function getRecentDeploys(
     deploymentName
   ])
   const historyItemRegexp = /^([0-9]+)\s+(.*)$/
-  const deployments: DeploymentInfo[] = stringToArray(deploymentsRaw)
+  const deployments = stringToArray(deploymentsRaw)
     .filter(item => {
       return historyItemRegexp.test(item)
     })
@@ -56,6 +56,9 @@ async function getRecentDeploys(
       const match = line.trim().match(historyItemRegexp)
       if (match) {
         const [, revision, annotation] = match
+        if (annotation === '<none>') {
+          return undefined
+        }
         const parts = annotation.split(',')
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const deploymentInfo: Record<string, any> = {
@@ -72,7 +75,16 @@ async function getRecentDeploys(
         )
       }
     })
-    .reverse()
+    .filter(item => item !== undefined)
+    .reverse() as DeploymentInfo[]
+
+  if (deployments.length < 2) {
+    const message = `\
+Prior versions of \`${serviceName}\` deployment \`${deploymentName}\` are missing the kubernetes.io/change-cause annotation
+Without this, no rollback metadata is available!`
+    core.setOutput('SLACK_NOTIFICATION_MESSAGE', message)
+    throw new Error(message)
+  }
 
   core.info(`Found ${deployments.length} previous deployments`)
   return deployments

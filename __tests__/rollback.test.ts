@@ -109,6 +109,74 @@ REVISION  CHANGE-CAUSE
     const detailLines = lines.slice(2, -2)
     expect(detailLines).toEqual(expectedLines)
   })
+
+  test('list recent deploys with limited annotations', async () => {
+    const rolloutHistory = `deployment.extensions/web
+REVISION  CHANGE-CAUSE
+118       <none>
+119       <none>
+120       type=kubernetes-deploy,deployer=user-2,revision=23456,at=2020-08-20 15:41:27 UTC
+121       type=kubernetes-deploy,deployer=user-1,revision=34567,at=2020-08-21 10:27:55 UTC
+`
+
+    const expectedLines = [
+      '2020-08-20 15:41:27 UTC `23456` <https://github.com/smartlyio/service/compare/23456..34567|GitHub>  by `user-2`'
+    ]
+
+    const runKubectlMock = mocked(runKubectl)
+    runKubectlMock.mockImplementationOnce(async () => rolloutHistory)
+
+    await listRecentDeploys('kube-prod', 'service', 'web')
+
+    const infoMock = mocked(info)
+
+    // Put some information in the build output
+    expect(infoMock.mock.calls.length).toEqual(2)
+
+    const setOutputMock = mocked(setOutput)
+    expect(setOutputMock.mock.calls.length).toEqual(1)
+    const [name, value] = setOutputMock.mock.calls[0]
+    expect(name).toEqual('SLACK_NOTIFICATION_MESSAGE')
+    const lines = value.trim().split('\n')
+
+    expect(lines.length).toEqual(expectedLines.length + 4) // two blanks and two context lines
+    const detailLines = lines.slice(2, -2)
+    expect(detailLines).toEqual(expectedLines)
+  })
+
+  test('list recent deploys without annotation', async () => {
+    const rolloutHistory = `deployment.extensions/web
+REVISION  CHANGE-CAUSE
+118       <none>
+119       <none>
+120       <none>
+121       <none>
+`
+
+    const runKubectlMock = mocked(runKubectl)
+    runKubectlMock.mockImplementationOnce(async () => rolloutHistory)
+
+    await expect(
+      listRecentDeploys('kube-prod', 'service', 'web')
+    ).rejects.toThrowError()
+  })
+
+  test('list recent deploys without annotation on earlier', async () => {
+    const rolloutHistory = `deployment.extensions/web
+REVISION  CHANGE-CAUSE
+118       <none>
+119       <none>
+120       <none>
+121       type=kubernetes-deploy,deployer=user-1,revision=34567,at=2020-08-21 10:27:55 UTC
+`
+
+    const runKubectlMock = mocked(runKubectl)
+    runKubectlMock.mockImplementationOnce(async () => rolloutHistory)
+
+    await expect(
+      listRecentDeploys('kube-prod', 'service', 'web')
+    ).rejects.toThrowError()
+  })
 })
 
 describe('rollbackCheckRevision', () => {

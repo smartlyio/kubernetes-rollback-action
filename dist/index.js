@@ -217,6 +217,9 @@ function getRecentDeploys(kubernetesContext, serviceName, deploymentName) {
             const match = line.trim().match(historyItemRegexp);
             if (match) {
                 const [, revision, annotation] = match;
+                if (annotation === '<none>') {
+                    return undefined;
+                }
                 const parts = annotation.split(',');
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const deploymentInfo = {
@@ -232,7 +235,15 @@ function getRecentDeploys(kubernetesContext, serviceName, deploymentName) {
                 throw new Error(`Line "${line}" didn't match regex "${historyItemRegexp}". This is not expeted!`);
             }
         })
+            .filter(item => item !== undefined)
             .reverse();
+        if (deployments.length < 2) {
+            const message = `\
+Prior versions of \`${serviceName}\` deployment \`${deploymentName}\` are missing the kubernetes.io/change-cause annotation
+Without this, no rollback metadata is available!`;
+            core.setOutput('SLACK_NOTIFICATION_MESSAGE', message);
+            throw new Error(message);
+        }
         core.info(`Found ${deployments.length} previous deployments`);
         return deployments;
     });
