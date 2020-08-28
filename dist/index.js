@@ -189,7 +189,7 @@ function formatDeploysList(serviceName, deploymentName, deployments) {
             const deploymentDetail = `\
 ${deployment.at} \
 ${deployment.revision} \
-[GitHub](${githubUrl})  \
+<${githubUrl}|GitHub>  \
 ${deployment.deployer}
 `;
             message += deploymentDetail;
