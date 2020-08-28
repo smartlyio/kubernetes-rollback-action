@@ -66,7 +66,7 @@ describe('formatDeploysList', () => {
     for (let id = revisions.length; id > 0; id--) {
       const index = revisions.length - id
       const regexp = new RegExp(
-        `^time-${id} rev-${id} .GitHub..https.*distillery.* user-${id}$`
+        `^time-${id} rev-${id} .https.*distillery.*\|GitHub. user-${id}$`
       )
       expect(revisions[index]).toMatch(regexp)
     }
@@ -84,9 +84,9 @@ REVISION  CHANGE-CAUSE
 `
 
     const expectedLines = [
-      '2020-08-20 15:41:27 UTC 23456 [GitHub](https://github.com/smartlyio/service/compare/23456..34567)  user-2',
-      '2020-08-20 14:45:03 UTC 12345 [GitHub](https://github.com/smartlyio/service/compare/12345..23456)  user-1',
-      '2020-08-20 14:39:59 UTC 01234 [GitHub](https://github.com/smartlyio/service/compare/01234..12345)  user-1'
+      '2020-08-20 15:41:27 UTC 23456 <https://github.com/smartlyio/service/compare/23456..34567|GitHub>  user-2',
+      '2020-08-20 14:45:03 UTC 12345 <https://github.com/smartlyio/service/compare/12345..23456|GitHub>  user-1',
+      '2020-08-20 14:39:59 UTC 01234 <https://github.com/smartlyio/service/compare/01234..12345|GitHub>  user-1'
     ]
 
     const runKubectlMock = mocked(runKubectl)
