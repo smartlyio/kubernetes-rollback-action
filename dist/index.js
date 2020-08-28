@@ -181,16 +181,16 @@ exports.rollbackCheckRevision = exports.listRecentDeploys = exports.formatDeploy
 const core = __importStar(__webpack_require__(186));
 const kubectl_1 = __webpack_require__(334);
 function formatDeploysList(serviceName, deploymentName, deployments) {
-    let message = `**Most recent ${serviceName} deploys:**\n\n`;
+    let message = `*Most recent ${serviceName} deploys:*\n\n`;
     let previousDeployment;
     for (const deployment of deployments) {
         if (previousDeployment) {
             const githubUrl = `https://github.com/smartlyio/${serviceName}/compare/${deployment.revision}..${previousDeployment.revision}`;
             const deploymentDetail = `\
 ${deployment.at} \
-${deployment.revision} \
-[GitHub](${githubUrl})  \
-${deployment.deployer}
+\`${deployment.revision}\` \
+<${githubUrl}|GitHub>  \
+by \`${deployment.deployer}\`
 `;
             message += deploymentDetail;
         }
@@ -217,6 +217,9 @@ function getRecentDeploys(kubernetesContext, serviceName, deploymentName) {
             const match = line.trim().match(historyItemRegexp);
             if (match) {
                 const [, revision, annotation] = match;
+                if (annotation === '<none>') {
+                    return undefined;
+                }
                 const parts = annotation.split(',');
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const deploymentInfo = {
@@ -232,7 +235,15 @@ function getRecentDeploys(kubernetesContext, serviceName, deploymentName) {
                 throw new Error(`Line "${line}" didn't match regex "${historyItemRegexp}". This is not expeted!`);
             }
         })
+            .filter(item => item !== undefined)
             .reverse();
+        if (deployments.length < 2) {
+            const message = `\
+Prior versions of \`${serviceName}\` deployment \`${deploymentName}\` are missing the kubernetes.io/change-cause annotation
+Without this, no rollback metadata is available!`;
+            core.setOutput('SLACK_NOTIFICATION_MESSAGE', message);
+            throw new Error(message);
+        }
         core.info(`Found ${deployments.length} previous deployments`);
         return deployments;
     });
