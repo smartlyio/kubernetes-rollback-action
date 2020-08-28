@@ -181,7 +181,7 @@ exports.rollbackCheckRevision = exports.listRecentDeploys = exports.formatDeploy
 const core = __importStar(__webpack_require__(186));
 const kubectl_1 = __webpack_require__(334);
 function formatDeploysList(serviceName, deploymentName, deployments) {
-    let message = `**Most recent ${serviceName} deploys:**\n\n`;
+    let message = `*Most recent ${serviceName} deploys:*\n\n`;
     let previousDeployment;
     for (const deployment of deployments) {
         if (previousDeployment) {

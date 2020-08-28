@@ -14,7 +14,7 @@ export function formatDeploysList(
   deploymentName: string,
   deployments: DeploymentInfo[]
 ): string {
-  let message = `**Most recent ${serviceName} deploys:**\n\n`
+  let message = `*Most recent ${serviceName} deploys:*\n\n`
 
   let previousDeployment: DeploymentInfo | undefined
   for (const deployment of deployments) {
