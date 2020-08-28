@@ -4,6 +4,7 @@ import {runKubectl} from '../src/kubectl'
 import {
   listRecentDeploys,
   formatDeploysList,
+  rollbackCheckRevision,
   DeploymentInfo
 } from '../src/rollback'
 
@@ -107,5 +108,76 @@ REVISION  CHANGE-CAUSE
     expect(lines.length).toEqual(expectedLines.length + 4) // two blanks and two context lines
     const detailLines = lines.slice(2, -2)
     expect(detailLines).toEqual(expectedLines)
+  })
+})
+
+describe('rollbackCheckRevision', () => {
+  test('find appropriate rollback revision', async () => {
+    const rolloutHistory = `deployment.extensions/web
+REVISION  CHANGE-CAUSE
+118       type=kubernetes-deploy,deployer=user-1,revision=01234,at=2020-08-20 14:39:59 UTC
+119       type=kubernetes-deploy,deployer=user-1,revision=12345,at=2020-08-20 14:45:03 UTC
+120       type=kubernetes-deploy,deployer=user-2,revision=23456,at=2020-08-20 15:41:27 UTC
+121       type=kubernetes-deploy,deployer=user-1,revision=34567,at=2020-08-21 10:27:55 UTC
+`
+    const runKubectlMock = mocked(runKubectl)
+    runKubectlMock.mockImplementationOnce(async () => rolloutHistory)
+
+    await rollbackCheckRevision('kube-prod', 'service', 'web', '12345')
+
+    const setOutputMock = mocked(setOutput)
+    const calls = setOutputMock.mock.calls
+    expect(calls.length).toEqual(2)
+    expect(calls[0]).toEqual([
+      'SLACK_NOTIFICATION_MESSAGE',
+      expect.stringMatching(/^Starting rollback.*/)
+    ])
+    expect(calls[1]).toEqual(['ALLOW_ROLLBACK', 'true'])
+  })
+
+  test("can't find appropriate rollback revision", async () => {
+    const rolloutHistory = `deployment.extensions/web
+REVISION  CHANGE-CAUSE
+118       type=kubernetes-deploy,deployer=user-1,revision=01234,at=2020-08-20 14:39:59 UTC
+119       type=kubernetes-deploy,deployer=user-1,revision=12345,at=2020-08-20 14:45:03 UTC
+120       type=kubernetes-deploy,deployer=user-2,revision=23456,at=2020-08-20 15:41:27 UTC
+121       type=kubernetes-deploy,deployer=user-1,revision=34567,at=2020-08-21 10:27:55 UTC
+`
+    const runKubectlMock = mocked(runKubectl)
+    runKubectlMock.mockImplementationOnce(async () => rolloutHistory)
+
+    await rollbackCheckRevision('kube-prod', 'service', 'web', 'abc1234')
+
+    const setOutputMock = mocked(setOutput)
+    const calls = setOutputMock.mock.calls
+    expect(calls.length).toEqual(2)
+    expect(calls[0]).toEqual([
+      'SLACK_NOTIFICATION_MESSAGE',
+      expect.stringMatching(/^Could not find recent deploy.*/)
+    ])
+    expect(calls[1]).toEqual(['ALLOW_ROLLBACK', 'false'])
+  })
+
+  test('Redeploying the latest revision is allowed', async () => {
+    const rolloutHistory = `deployment.extensions/web
+REVISION  CHANGE-CAUSE
+118       type=kubernetes-deploy,deployer=user-1,revision=01234,at=2020-08-20 14:39:59 UTC
+119       type=kubernetes-deploy,deployer=user-1,revision=12345,at=2020-08-20 14:45:03 UTC
+120       type=kubernetes-deploy,deployer=user-2,revision=23456,at=2020-08-20 15:41:27 UTC
+121       type=kubernetes-deploy,deployer=user-1,revision=34567,at=2020-08-21 10:27:55 UTC
+`
+    const runKubectlMock = mocked(runKubectl)
+    runKubectlMock.mockImplementationOnce(async () => rolloutHistory)
+
+    await rollbackCheckRevision('kube-prod', 'service', 'web', '01234')
+
+    const setOutputMock = mocked(setOutput)
+    const calls = setOutputMock.mock.calls
+    expect(calls.length).toEqual(2)
+    expect(calls[0]).toEqual([
+      'SLACK_NOTIFICATION_MESSAGE',
+      expect.stringMatching(/^Starting rollback.*/)
+    ])
+    expect(calls[1]).toEqual(['ALLOW_ROLLBACK', 'true'])
   })
 })

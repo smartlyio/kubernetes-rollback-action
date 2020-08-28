@@ -19,27 +19,24 @@ This will be used to provide functionality like:
 | serviceName | | yes | Name of the kubernetes service to operate on. |
 | deploymentName | | no | Name of the deployment within service to operate rollbacks on |
 | command | | yes | Canary support command to run. One of `[listRecentDeploys|rollback]`. |
+| rollbackSha | | no | Git revision to validate with the `checkRevision` command. |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
 | SLACK_NOTIFICATION_MESSAGE | Message that should be sent to slack as a response to the command |
+| ALLOW_ROLLBACK | Whether or not rollback should be allowed. `true/false` |
 
 ## Example usage
 
 ```yaml
 name: Is Locked
-on:
-  pull_request:
-    branches:
-      - master
-  push:
-    branches:
-      - master
+
+<manual-trigger>
 
 jobs:
-  is_locked:
+  list_deploys:
     runs-on: ubuntu-latest
     id: is_locked
     steps:
@@ -52,13 +49,61 @@ jobs:
           kubernetesClusterDomain: my-kubernetes-server.example.com
           kubernetesContext: test-context
           kubernetesNamespace: test-service
-      - name: Check if deployment is locked
+      - name: List recent deploys for rollback
         uses: smartlyio/kubernetes-rollback-action@v1
         with: 
           kubernetesContext: test-context
           serviceName: test-service
           deploymentName: web
           command: listRecentDeploys
+
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Authenticate with the cluster
+        env:
+          KUBERNETES_AUTH_TOKEN: ${{ secrets.KUBERNETES_AUTH_TOKEN }}
+        uses: smartlyio/kubernetes-auth-action@v1
+        with:
+          kubernetesClusterDomain: my-kubernetes-server.example.com
+          kubernetesContext: test-context
+          kubernetesNamespace: test-service
+      - name: Check if deploy is allowed
+        uses: smartlyio/kubernetes-rollback-action@v1
+        id: check_revision
+        with: 
+          kubernetesContext: test-context
+          serviceName: test-service
+          deploymentName: web
+          rollbackSha: abc123
+          command: checkRevision
+      - name: notify deploy started/failed
+        uses: smartlyio/workflow-webhook@v1
+        with:
+          webhook_url: "${{ secrets.SLACK_NOTIFY_URL }}"
+          webhook_auth: "${{ secrets.SLACK_NOTIFY_TOKEN }}"
+          webhook_secret: "${{ secrets.SLACK_NOTIFY_HMAC_SECRET }}"
+          data: |
+            {
+              "channels": ["${{ github.event.inputs.channel }}"],
+              "jobs": {},
+              "user": "${{ github.event.inputs.user }}",
+              "run_id": ${{ github.run_id }},
+              "thread_id": "${{ github.event.inputs.threadId }}",
+              "notification_override": {
+                "text": "${{ steps.check_revision.outputs.SLACK_NOTIFICATION_MESSAGE }}"
+              }
+            } 
+      - name: checkout revision
+        if: steps.check_revision.outputs.ALLOW_ROLLBACK == 'true'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ fixme.rollbackSha }}
+            
+      - name: Deploy with krane
+        if: steps.check_revision.outputs.ALLOW_ROLLBACK == 'true'
+
 ```
 
 ## Development

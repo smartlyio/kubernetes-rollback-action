@@ -36,11 +36,11 @@ ${deployment.deployer}
   return message
 }
 
-export async function listRecentDeploys(
+async function getRecentDeploys(
   kubernetesContext: string,
   serviceName: string,
   deploymentName: string
-): Promise<void> {
+): Promise<DeploymentInfo[]> {
   const deploymentsRaw = await runKubectl(kubernetesContext, [
     'rollout',
     'history',
@@ -73,8 +73,21 @@ export async function listRecentDeploys(
       }
     })
     .reverse()
-  core.info(`Found ${deployments.length} previous deployments`)
 
+  core.info(`Found ${deployments.length} previous deployments`)
+  return deployments
+}
+
+export async function listRecentDeploys(
+  kubernetesContext: string,
+  serviceName: string,
+  deploymentName: string
+): Promise<void> {
+  const deployments = await getRecentDeploys(
+    kubernetesContext,
+    serviceName,
+    deploymentName
+  )
   const deploymentListMessage = formatDeploysList(
     serviceName,
     deploymentName,
@@ -83,4 +96,34 @@ export async function listRecentDeploys(
 
   core.info(deploymentListMessage)
   core.setOutput('SLACK_NOTIFICATION_MESSAGE', deploymentListMessage)
+}
+
+export async function rollbackCheckRevision(
+  kubernetesContext: string,
+  serviceName: string,
+  deploymentName: string,
+  rollbackSha: string
+): Promise<void> {
+  const deployments = await getRecentDeploys(
+    kubernetesContext,
+    serviceName,
+    deploymentName
+  )
+  const requestedDeployments = deployments.filter(item => {
+    return item.revision === rollbackSha
+  })
+  let message
+  let allowRollback = false
+  if (requestedDeployments.length === 0) {
+    message = `\
+Could not find recent deploy of \`${serviceName}\` with revision \`${rollbackSha}\`
+Use \`hubot kube-gha-rollback ${serviceName} list\` to get the list of available rollback revisions.
+`
+  } else {
+    message = `Starting rollback of \`${serviceName}\` to revision \`${rollbackSha}\``
+    allowRollback = true
+  }
+
+  core.setOutput('SLACK_NOTIFICATION_MESSAGE', message)
+  core.setOutput('ALLOW_ROLLBACK', allowRollback.toString())
 }
