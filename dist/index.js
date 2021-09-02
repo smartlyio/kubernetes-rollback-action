@@ -120,21 +120,21 @@ function run() {
             const deploymentName = core.getInput('deploymentName', { required: true });
             const command = core.getInput('command', { required: true });
             if (command === 'listRecentDeploys') {
-                yield rollback_1.listRecentDeploys(kubernetesContext, serviceName, deploymentName);
+                yield (0, rollback_1.listRecentDeploys)(kubernetesContext, serviceName, deploymentName);
             }
             else if (command === 'checkRevision') {
                 const rollbackSha = core.getInput('rollbackSha');
                 if (!rollbackSha) {
                     throw new Error('Required input `rollbackSha` was not provided.');
                 }
-                yield rollback_1.rollbackCheckRevision(kubernetesContext, serviceName, deploymentName, rollbackSha);
+                yield (0, rollback_1.rollbackCheckRevision)(kubernetesContext, serviceName, deploymentName, rollbackSha);
             }
             else {
                 throw new Error(`Command "${command}" is not implemented`);
             }
         }
         catch (error) {
-            core.setFailed(error.message);
+            core.setFailed(`${error}`);
         }
     });
 }
@@ -201,14 +201,14 @@ by \`${deployment.deployer}\`
 exports.formatDeploysList = formatDeploysList;
 function getRecentDeploys(kubernetesContext, serviceName, deploymentName) {
     return __awaiter(this, void 0, void 0, function* () {
-        const deploymentsRaw = yield kubectl_1.runKubectl(kubernetesContext, [
+        const deploymentsRaw = yield (0, kubectl_1.runKubectl)(kubernetesContext, [
             'rollout',
             'history',
             'deployments',
             deploymentName
         ]);
         const historyItemRegexp = /^([0-9]+)\s+(.*)$/;
-        const deployments = kubectl_1.stringToArray(deploymentsRaw)
+        const deployments = (0, kubectl_1.stringToArray)(deploymentsRaw)
             .filter(item => {
             return historyItemRegexp.test(item);
         })
