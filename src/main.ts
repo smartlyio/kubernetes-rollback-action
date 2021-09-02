@@ -26,7 +26,7 @@ async function run(): Promise<void> {
       throw new Error(`Command "${command}" is not implemented`)
     }
   } catch (error) {
-    core.setFailed(error.message)
+    core.setFailed(`${error}`)
   }
 }
 
