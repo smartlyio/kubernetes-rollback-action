@@ -1,0 +1,27 @@
+test:
+  runs-on: <%= ubuntu_version %>
+  steps:
+  - uses: actions/checkout@v2
+  - name: "Build action for test"
+    run: |
+      npm install
+      npm run all
+      git clean -fXd
+  - name: Mock the kubectl binary
+    run: |
+      echo "$(pwd)/__tests__/bin" >> "$GITHUB_PATH"
+  - name: List recent deployments
+    uses: ./
+    with: 
+      serviceName: test-service
+      kubernetesContext: test-context
+      command: listRecentDeploys
+      deploymentName: deployment
+  - name: Validate a redeploy revision
+    uses: ./
+    with:
+      serviceName: test-service
+      kubernetesContext: test-context
+      command: checkRevision
+      rollbackSha: abc123
+      deploymentName: deployment
