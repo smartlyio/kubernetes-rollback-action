@@ -1,8 +1,8 @@
 {
   "name": "kubernetes-canary-action",
-  "version": "0.0.0",
+  "version": "1.0.2",
   "private": true,
-  "description": "An action to handle kubectl output parsing for canary deploys and rollbacks",
+  "description": "An action to handle determining valid kubernetes rollbacks",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
@@ -15,12 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/smartlyio/kubernetes-canary-action.git"
+    "url": "git+https://github.com/smartlyio/kubernetes-rollback-action.git"
   },
   "keywords": [
     "actions",
-    "node",
-    "setup"
+    "kubernetes",
+    "deployment",
+    "lifecycle",
+    "rollback"
   ],
   "author": "",
   "license": "MIT",
