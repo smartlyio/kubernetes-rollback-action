@@ -52,5 +52,13 @@
       "matchUpdateTypes": ["major"],
       "labels": ["patch", "renovate-deps"]
     }
-  ]
+  ],
+  "github-actions": {
+    "enabled": true,
+    "labels": [
+      "no release",
+      "renovate-deps"
+    ],
+    "automerge": true
+  }
 }
