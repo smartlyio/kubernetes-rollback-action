@@ -1,5 +1,5 @@
 import {setOutput, info} from '@actions/core'
-import {mocked} from 'ts-jest/utils'
+import {mocked} from 'jest-mock'
 import {runKubectl} from '../src/kubectl'
 import {
   listRecentDeploys,
