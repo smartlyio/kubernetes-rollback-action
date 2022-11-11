@@ -1,6 +1,6 @@
 {
   "name": "kubernetes-canary-action",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "private": true,
   "description": "An action to handle determining valid kubernetes rollbacks",
   "main": "lib/main.js",
