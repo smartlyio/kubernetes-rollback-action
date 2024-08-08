@@ -1,16 +1,7 @@
-# IMPORTANT NOTE/WARNING!
-# Do not make changes to this file, your changes will be overwritten.
-#
-# This file is automagically generated from:
-# - .github/templates/release.yml.erb
-# - Templates contained in the smartlyio/github-actions-templates repository
-#
-# This file can be updated by editing the template file, and running `devbox render workflows`
-
-name: Build and release the action
+name: "Pull Request"
 
 on:
-  push:
+  pull_request:
     branches: [master]
 
 jobs:
@@ -85,4 +76,5 @@ jobs:
       - name: Release flow
         uses: smartlyio/github-actions@release-action-node-v1
         with:
+          dry_run: true
           token: "${{ secrets.GITHUB_TOKEN }}"
