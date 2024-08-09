@@ -37,7 +37,7 @@ name: Is Locked
 
 jobs:
   list_deploys:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     id: is_locked
     steps:
       - uses: actions/checkout@v2
@@ -58,7 +58,7 @@ jobs:
           command: listRecentDeploys
 
   rollback:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - name: Authenticate with the cluster
